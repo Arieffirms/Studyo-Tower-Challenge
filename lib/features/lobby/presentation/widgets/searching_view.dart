@@ -11,46 +11,64 @@ class SearchingView extends GetView<LobbyController> {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            'Searching for match...',
-            style: TextStyle(
-              color: Color(0xFF2D1B4E),
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+        margin: const EdgeInsets.symmetric(horizontal: 24),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2D1B4E),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white54, width: 2),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Searching for match...',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-          // Players matched — reaktif via Obx
-          Obx(() {
-            final count = controller.activeLobby.value?.playerIds.length ?? 1;
-            return Text(
-              'Players matched: \$count / 8',
-              style: const TextStyle(color: Color(0xFF6B21A8), fontSize: 20),
-            );
-          }),
+            // Players matched — reaktif via Obx
+            Obx(() {
+              final count = controller.activeLobby.value?.playerIds.length ?? 
+                            controller.vsComputerSimulatedCount.value;
+              return Text(
+                "Players matched: $count / 8",
+                style: const TextStyle(
+                  color: Color(0xFF6DE0B2), 
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              );
+            }),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // Timer — reaktif via Obx
-          Obx(() {
-            final time = controller.secondsRemaining.value;
-            final m = (time / 60).floor();
-            final s = time % 60;
-            return Text(
-              "Time remaining: \${m.toString().padLeft(2, '0')}:\${s.toString().padLeft(2, '0')}",
-              style: const TextStyle(color: Color(0xFF4A1A6E), fontSize: 18),
-            );
-          }),
+            // Timer — reaktif via Obx
+            Obx(() {
+              final time = controller.secondsRemaining.value;
+              final m = (time ~/ 60);
+              final s = time % 60;
+              final isOnline = controller.activeLobby.value != null;
+              final label = isOnline ? "Time remaining" : "Searching time";
+              
+              return Text(
+                "$label: ${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}",
+                style: const TextStyle(color: Colors.white70, fontSize: 18),
+              );
+            }),
 
-          const SizedBox(height: 40),
+            const SizedBox(height: 40),
 
-          // Cancel button
-          _CancelButton(onPressed: () => controller.isSearching.value = false),
-        ],
+            // Cancel button
+            _CancelButton(onPressed: () => controller.cancelSearch()),
+          ],
+        ),
       ),
     );
   }
@@ -109,8 +127,8 @@ class _CancelButtonState extends State<_CancelButton>
           width: 250,
           height: 50,
           decoration: BoxDecoration(
-            color: const Color(0xFF3B82F6),
-            borderRadius: BorderRadius.circular(8),
+            color: const Color(0xFFE53935),
+            borderRadius: BorderRadius.circular(12),
           ),
           alignment: Alignment.center,
           child: const Text(

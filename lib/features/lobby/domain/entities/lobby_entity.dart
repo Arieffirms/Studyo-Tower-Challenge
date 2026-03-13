@@ -1,11 +1,13 @@
 import 'package:equatable/equatable.dart';
 
 /// Represents a matchmaking session (Lobby) waiting for players.
+/// Also stores the meta state of a LiveMatch
 class LobbyEntity extends Equatable {
   final String lobbyId;
-  final String status; // 'waiting', 'starting'
-  final int createdAt; // Timestamp when lobby was created
-  final int? matchStartTime; // Timestamp when 'starting' phase finishes
+  final String status; // 'lobby', 'running', 'ended'
+  final int createdAt; // Used as startAt or creation time
+  final int? matchStartTime; // Timestamp when 'running' phase starts
+  final int? durationSec; // Expected duration
   final List<String> playerIds; // List of joined Player IDs (human or bot)
 
   const LobbyEntity({
@@ -13,6 +15,7 @@ class LobbyEntity extends Equatable {
     required this.status,
     required this.createdAt,
     this.matchStartTime,
+    this.durationSec = 300,
     this.playerIds = const [],
   });
 
@@ -25,5 +28,5 @@ class LobbyEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [lobbyId, status, createdAt, matchStartTime, playerIds];
+  List<Object?> get props => [lobbyId, status, createdAt, matchStartTime, durationSec, playerIds];
 }

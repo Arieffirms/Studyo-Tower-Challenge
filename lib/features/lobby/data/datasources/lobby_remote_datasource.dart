@@ -14,126 +14,159 @@ abstract class LobbyRemoteDataSource {
 class LobbyRemoteDataSourceImpl implements LobbyRemoteDataSource {
   final FirebaseDatabase _db = FirebaseDatabase.instance;
 
+  // Membantu membuat initial state untuk Tim
+  Map<String, dynamic> _createInitialTeamData() {
+    return {
+      'targetValue': 1000,
+      'opAdd': 10,
+      'opMul': 2,
+      'score': 0,
+      'towers': {}, // Akan diisi Game Logic nanti
+    };
+  }
+
   @override
   Future<String> joinOnlineLobby(PlayerModel player) async {
-    // 1. Find a waiting lobby
+    // 1. Cari liveMatch yang berstatus 'lobby' (waiting room)
     final query = _db
-        .ref('lobbies')
-        .orderByChild('status')
-        .equalTo('waiting')
+        .ref('liveMatches')
+        .orderByChild('meta/status')
+        .equalTo('lobby')
         .limitToFirst(1);
     final snapshot = await query.get();
 
-    String lobbyId;
+    String matchId;
 
     if (snapshot.exists) {
-      // 2a. Join existing lobby
+      // 2a. Join match yang sudah ada
       final map = snapshot.value as Map<dynamic, dynamic>;
-      lobbyId = map.keys.first.toString();
+      matchId = map.keys.first.toString();
 
-      // We must use transaction here to avoid race conditions when joining
-      final lobbyRef = _db.ref('lobbies/$lobbyId');
+      final matchRef = _db.ref('liveMatches/$matchId');
 
-      // Update player
-      await lobbyRef.child('players/${player.playerId}').set(player.toJson());
+      // Update player ke tim yang kosong atau random
+      await matchRef.child('players/${player.playerId}').set(player.toJson());
 
-      // Check if full (this should ideally be a cloud function, doing it client side for simplicity)
-      final lobbySnap = await lobbyRef.get();
-      if (lobbySnap.exists) {
-        final lobbyMap = lobbySnap.value as Map<dynamic, dynamic>;
-        final playersMap = lobbyMap['players'] as Map<dynamic, dynamic>? ?? {};
+      // Cek apakah sudah penuh
+      final matchSnap = await matchRef.get();
+      if (matchSnap.exists) {
+        final matchMap = matchSnap.value as Map<dynamic, dynamic>;
+        final playersMap = matchMap['players'] as Map<dynamic, dynamic>? ?? {};
         if (playersMap.length >= 8) {
-          await lobbyRef.update({
-            'status': 'starting',
-            'matchStartTime': ServerValue.timestamp,
+          await matchRef.child('meta').update({
+            'status': 'starting', // Segera berubah jadi running
+            'startAt': ServerValue.timestamp,
+            'durationSec': 300,
           });
         }
       }
     } else {
-      // 2b. Create new lobby
-      final newLobbyRef = _db.ref('lobbies').push();
-      lobbyId = newLobbyRef.key!;
+      // 2b. Buat match baru
+      final newMatchRef = _db.ref('liveMatches').push();
+      matchId = newMatchRef.key!;
 
-      final newLobby = {
-        'status': 'waiting',
-        'createdAt': ServerValue.timestamp,
+      final newMatchData = {
+        'meta': {
+          'status': 'lobby',
+          'startAt': ServerValue.timestamp,
+          'durationSec': 300,
+        },
+        'teams': {
+          'A': _createInitialTeamData(),
+          'B': _createInitialTeamData(),
+        },
       };
 
-      await newLobbyRef.set(newLobby);
-      await newLobbyRef
+      await newMatchRef.set(newMatchData);
+      await newMatchRef
           .child('players/${player.playerId}')
           .set(player.toJson());
     }
 
-    return lobbyId;
+    return matchId;
   }
 
   @override
   Future<String> createVsComputerLobby(PlayerModel player) async {
-    final newLobbyRef = _db.ref('lobbies').push();
-    final lobbyId = newLobbyRef.key!;
+    final newMatchRef = _db.ref('liveMatches').push();
+    final matchId = newMatchRef.key!;
 
-    final newLobby = {
-      'status': 'starting', // skips 'waiting' phase
-      'createdAt': ServerValue.timestamp,
-      'matchStartTime': ServerValue.timestamp,
+    final newMatchData = {
+      'meta': {
+        'status': 'starting', // Langsung starting
+        'startAt': ServerValue.timestamp,
+        'durationSec': 300,
+      },
+      'teams': {
+        'A': _createInitialTeamData(),
+        'B': _createInitialTeamData(),
+      },
     };
 
-    await newLobbyRef.set(newLobby);
+    await newMatchRef.set(newMatchData);
 
-    // add human player
-    await newLobbyRef.child('players/${player.playerId}').set(player.toJson());
+    // Masukkan player manusia (tim dan statusnya)
+    await newMatchRef.child('players/${player.playerId}').set(player.toJson());
 
-    // fill 7 bots
-    await fillWithBots(lobbyId, 7);
+    // Isi 7 slot lainnya dengan Bot
+    await fillWithBots(matchId, 7);
 
-    return lobbyId;
+    return matchId;
   }
 
   @override
   Stream<LobbyModel> observeLobby(String lobbyId) {
-    return _db.ref('lobbies/$lobbyId').onValue.map((event) {
+    return _db.ref('liveMatches/$lobbyId').onValue.map((event) {
       if (event.snapshot.exists) {
         final data = event.snapshot.value as Map<dynamic, dynamic>;
         return LobbyModel.fromJson(data, event.snapshot.key!);
       }
-      throw Exception('Lobby not found');
+      throw Exception('Match not found');
     });
   }
 
   @override
   Future<void> fillWithBots(String lobbyId, int botsToAdd) async {
-    final playersRef = _db.ref('lobbies/$lobbyId/players');
+    final playersRef = _db.ref('liveMatches/$lobbyId/players');
+
+    // Fake names written to Firebase so displayName is correct everywhere
+    const fakeBotNames = [
+      'Arif', 'Zela', 'Riko', 'Dimas', 'Lina',
+      'Fajar', 'Sinta', 'Niko', 'Dewi', 'Hendra',
+      'Putri', 'Andi', 'Rina', 'Bayu', 'Citra',
+    ];
 
     final updates = <String, dynamic>{};
     for (int i = 0; i < botsToAdd; i++) {
       final botId = 'bot_${DateTime.now().millisecondsSinceEpoch}_$i';
       final bot = PlayerModel(
         playerId: botId,
-        displayName: 'AI Bot \${i+1}',
-        team: i % 2 == 0 ? 'A' : 'B', // Will balance later, naive assign here
+        displayName: fakeBotNames[i % fakeBotNames.length],
+        team: '',
         isBot: true,
+        isAFK: false,
+        lastSeenAt: DateTime.now().millisecondsSinceEpoch,
       );
       updates[botId] = bot.toJson();
     }
 
     await playersRef.update(updates);
 
-    // Also change status if full
-    await _db.ref('lobbies/$lobbyId').update({
+    // Ubah status jika belum 'starting'
+    await _db.ref('liveMatches/$lobbyId/meta').update({
       'status': 'starting',
-      'matchStartTime': ServerValue.timestamp,
+      'startAt': ServerValue.timestamp,
     });
   }
 
   @override
   Future<void> leaveLobby(String lobbyId, String playerId) async {
-    await _db.ref('lobbies/$lobbyId/players/$playerId').remove();
+    await _db.ref('liveMatches/$lobbyId/players/$playerId').remove();
 
-    // If lobby is empty after leaving, can optionally delete it
-    final snapshot = await _db.ref('lobbies/$lobbyId/players').get();
+    // Hapus lobby jika sudah tidak ada player
+    final snapshot = await _db.ref('liveMatches/$lobbyId/players').get();
     if (!snapshot.exists) {
-      await _db.ref('lobbies/$lobbyId').remove();
+      await _db.ref('liveMatches/$lobbyId').remove();
     }
   }
 }

@@ -7,9 +7,7 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(const MyApp());
 }
@@ -27,7 +25,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       initialRoute: Routes.LOBBY, // Menggunakan Class Routes
-      getPages: AppPages.pages,   // Menggunakan list yang sudah dipisah
+      getPages: AppPages.pages, // Menggunakan list yang sudah dipisah
     );
   }
 }

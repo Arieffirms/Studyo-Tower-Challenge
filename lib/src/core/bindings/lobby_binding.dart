@@ -35,8 +35,8 @@ class LobbyBinding extends Bindings {
         fillWithBotsUseCase: Get.find(),
         // Mocking Current User dengan random ID (tanpa login system)
         currentUser: AppUserEntity(
-          playerId: 'user_\${Random().nextInt(99999)}',
-          displayName: 'Guest\${Random().nextInt(9999)}',
+          playerId: "user_${Random().nextInt(99999)}",
+          displayName: "Guest${Random().nextInt(9999)}",
         ),
       ),
     );

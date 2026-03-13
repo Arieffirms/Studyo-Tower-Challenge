@@ -8,9 +8,13 @@ class BotMoveUseCase {
 
   BotMoveUseCase(this.repository);
 
-  Future<void> call(String matchId, BotConfigurationEntity bot, List<TowerEntity> availableTowers) async {
+  Future<void> call(
+    String matchId,
+    BotConfigurationEntity bot,
+    List<TowerEntity> availableTowers,
+  ) async {
     if (availableTowers.isEmpty) return;
-    
+
     // Simulate finding a random tower to claim
     availableTowers.shuffle();
     final targetTower = availableTowers.first;

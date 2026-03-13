@@ -36,4 +36,10 @@ abstract class ITowerChallengeRepository {
   
   /// Get all active bots for a specific match.
   Future<List<BotConfigurationEntity>> getActiveBots(String matchId);
+
+  /// Assign team to player and balance bots
+  Future<void> assignTeamAndBalanceBots(String matchId, String uid, String team);
+
+  /// Updates final team scores in Firebase
+  Future<void> updateTeamScores(String matchId, int scoreA, int scoreB);
 }

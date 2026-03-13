@@ -6,6 +6,7 @@ class LobbyModel extends LobbyEntity {
     required super.status,
     required super.createdAt,
     super.matchStartTime,
+    super.durationSec,
     super.playerIds,
   });
 
@@ -16,21 +17,26 @@ class LobbyModel extends LobbyEntity {
       players = playersMap.keys.cast<String>().toList();
     }
 
+    final meta = json['meta'] as Map<dynamic, dynamic>? ?? {};
+
     return LobbyModel(
       lobbyId: id,
-      status: json['status'] ?? 'waiting',
-      createdAt: json['createdAt'] ?? 0,
-      matchStartTime: json['matchStartTime'],
+      status: meta['status'] ?? 'lobby',
+      createdAt: meta['startAt'] ?? 0,
+      matchStartTime: meta['startAt'],
+      durationSec: meta['durationSec'] ?? 300,
       playerIds: players,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'status': status,
-      'createdAt': createdAt,
-      'matchStartTime': matchStartTime,
-      // players will be handled separately in Firebase to avoid overwriting
+      'meta': {
+        'status': status,
+        'startAt': createdAt,
+        'durationSec': durationSec,
+      }
+      // teams and players will be handled separately in Firebase to avoid overwriting
     };
   }
 }

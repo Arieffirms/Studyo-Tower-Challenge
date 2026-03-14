@@ -84,7 +84,13 @@ The project follows the **Clean Architecture** pattern to ensure a clear separat
           }
         }
         ```
-    -   Add your `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) to the respective platform folders.
+    - Add your `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) to their respective platform folders.
+
+    - Or generate the configuration automatically using the command:
+    
+    ```bash
+    flutterfire configure
+    ```
 
 4.  **Run the application:**
     ```bash

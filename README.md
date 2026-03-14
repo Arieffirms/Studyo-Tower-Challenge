@@ -1,6 +1,6 @@
 # Tower Challenge — Real-time Team Mini-Game
 
-![Tower Challenge Banner](assets\images\lobbies\logo-game.png) <!-- Note: Replace with actual banner if available -->
+![Tower Challenge Banner](assets/images/lobbies/logo-game.png)
 
 A high-performance, real-time competitive multiplayer game built with **Flutter**, **Flame Engine**, and **Firebase Realtime Database**. Players are divided into two teams (Team A and Team B) and must race to solve towers by reaching a target numeric value using specific operations (+10, ×2).
 

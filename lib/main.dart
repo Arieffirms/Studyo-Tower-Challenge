@@ -17,15 +17,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Kita gunakan GetMaterialApp, BUKAN MaterialApp standar
     return GetMaterialApp(
       title: 'Tower Challenge',
-      theme: ThemeData(
-        brightness: Brightness.dark, // Cocok dengan tampilan Flame hitam/gelap
-        primarySwatch: Colors.blue,
-      ),
-      initialRoute: Routes.LOBBY, // Menggunakan Class Routes
-      getPages: AppPages.pages, // Menggunakan list yang sudah dipisah
+      theme: ThemeData(brightness: Brightness.dark, primarySwatch: Colors.blue),
+      initialRoute: Routes.LOBBY,
+      getPages: AppPages.pages,
     );
   }
 }
